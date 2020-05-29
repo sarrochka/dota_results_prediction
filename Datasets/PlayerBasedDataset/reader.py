@@ -36,7 +36,6 @@ class PlayerBasedDataReader:
 
         players_radiant_id = np.asarray(new_data.iloc[:, idx_r].values.tolist())
         players_dire_id = np.asarray(new_data.iloc[:, idx_d].values.tolist())
-        print(players_radiant_id.shape, players_radiant_id.dtype)
 
         for j in range(5):
             new_data.loc[:, f'radiant_player_{j + 1}'] = players_radiant_id[:, j]
