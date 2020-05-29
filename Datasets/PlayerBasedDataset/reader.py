@@ -1,5 +1,6 @@
 import pickle as pk
 import numpy as np
+import pandas as pd
 
 
 class PlayerBasedDataReader:
@@ -42,6 +43,8 @@ class PlayerBasedDataReader:
             new_data.loc[:, f'dire_player_{j + 1}'] = players_dire_id[:, j]
 
         new_data = new_data.drop(columns=['players_radiant_id', 'players_dire_id'])
+        self.feature_cols.remove('players_radiant_id')
+        self.feature_cols.remove('players_dire_id')
 
         self.valide_data = new_data
 
@@ -51,6 +54,12 @@ class PlayerBasedDataReader:
 
     def find_unique_players(self):
         pass
+
+    def get_x(self):
+        return self.valide_data[self.feature_cols]
+
+    def get_y(self):
+        return pd.get_dummies(self.valide_data[self.y_cols])
 
 
 if __name__ == '__main__':
