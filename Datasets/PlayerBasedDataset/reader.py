@@ -7,7 +7,7 @@ class PlayerBasedDataReader:
 
     def __init__(self, filename: str, feature_cols: list, y_cols):
         self.raw_data = None
-        self.valide_data = None
+        self.preprocessed_data = None
         self.feature_cols = feature_cols
         self.y_cols = y_cols
         self.used_cols = feature_cols + y_cols
@@ -45,20 +45,56 @@ class PlayerBasedDataReader:
         self.feature_cols.remove('players_radiant_id')
         self.feature_cols.remove('players_dire_id')
 
-        self.valide_data = new_data
+        self.preprocessed_data = new_data
+
+    def swap_players_column(self, data_frame, player_is_dire):
+        cols = data_frame.columns.tolist()
+        if player_is_dire:
+            cols = cols[:11]
+            for j in range(1, 6):
+                cols.append('dire_player_'+str(j))
+            for j in range(1, 6):
+                cols.append('radiant_player_'+str(j))
+        else:
+            cols = cols[:11]
+            for j in range(1, 6):
+                cols.append('radiant_player_'+str(j))
+            for j in range(1, 6):
+                cols.append('dire_player_'+str(j))
+        data_frame = data_frame[cols]
+        return data_frame
+
+    def get_data_by_player(self, player_id: int):
+        data_frame = self.preprocessed_data.query('dire_player_1 == @player_id | dire_player_2 == @player_id | '
+                                                  'dire_player_3 == @player_id | dire_player_4 == @player_id | '
+                                                  'dire_player_5 == @player_id | radiant_player_1 == @player_id | '
+                                                  'radiant_player_2 == @player_id | radiant_player_3 == @player_id |'
+                                                  'radiant_player_4 == @player_id | radiant_player_5 == @player_id')
+
+        data_size = data_frame.shape[0]
+        for i in range(data_size):
+            for j in range(1, 6):
+                if player_id == data_frame.iloc[i]['dire_player_'+str(j)]:
+                    data_frame.at[data_frame.index[i], 'dire_player_' + str(j)] = data_frame.iloc[i]['dire_player_1']
+                    data_frame.at[data_frame.index[i], 'dire_player_1'] = player_id
+                elif player_id == data_frame.iloc[i]['radiant_player_'+str(j)]:
+                    data_frame.at[data_frame.index[i], 'radiant_player_' + str(j)] = data_frame.iloc[i]['radiant_player_1']
+                    data_frame.at[data_frame.index[i], 'radiant_player_1'] = player_id
+
+        return data_frame
 
     def write_data(self, filename: str):
         with open(filename, 'wb') as file:
-            pk.dump(self.valide_data, file)
+            pk.dump(self.preprocessed_data, file)
 
     def find_unique_players(self):
         pass
 
     def get_x(self):
-        return self.valide_data[self.feature_cols]
+        return self.preprocessed_data[self.feature_cols]
 
     def get_y(self):
-        return pd.get_dummies(self.valide_data[self.y_cols])
+        return pd.get_dummies(self.preprocessed_data[self.y_cols])
 
 
 if __name__ == '__main__':
@@ -66,5 +102,6 @@ if __name__ == '__main__':
                      'players_radiant_id', 'players_dire_id']
     y_cols_ = ['radiant_win']
     data = PlayerBasedDataReader('../BaseDataset/dota2_dataset.pickle', feature_cols_, y_cols_)
+    print(data.get_data_by_player(117956848))
     # data.write_data('PlayerBasedData.pickle')
     # print(data.valide_data['radiant_player_1'])
