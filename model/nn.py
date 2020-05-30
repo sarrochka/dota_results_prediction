@@ -68,7 +68,7 @@ class ResultPredictingModel:
 
 if __name__ == '__main__':
     feature_cols = ['dire_score', 'radiant_score', 'duration', 'patch', 'region', 'radiant_team_id', 'dire_team_id',
-                    'players_radiant_id', 'players_dire_id', 'radiant_team_name', 'dire_team_name']
+                    'players_radiant_id', 'players_dire_id', 'radiant_team', 'dire_team']
     y_cols = ['radiant_win']
     x_cols = ['avg_dire_score', 'avg_radiant_score', 'avg_duration', 'patch', 'region']
 
