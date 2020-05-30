@@ -1,6 +1,7 @@
 import pickle as pk
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 
 class PlayerBasedDataReader:
@@ -95,6 +96,14 @@ class PlayerBasedDataReader:
 
     def get_y(self):
         return pd.get_dummies(self.preprocessed_data[self.y_cols])
+
+    def get_train_val_test(self, train_size=0.7):
+        all_x = self.get_x()
+        all_y = self.get_y()
+        train_x, val_test_x, train_y, val_test_y = train_test_split(all_x, all_y, test_size=1.-train_size)
+        val_x, test_x, val_y, test_y = train_test_split(val_test_x, val_test_y, test_size=0.5)
+
+        return train_x, train_y, val_x, val_y, test_x, test_y
 
 
 if __name__ == '__main__':
