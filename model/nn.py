@@ -6,10 +6,11 @@ from Datasets.BaseDataset.reader import DataReader
 
 
 class ResultPredictingModel:
-    def __init__(self, y, h_list, cost_weigths):
-        self.y = y
+    def __init__(self, x_, y_, h_list, cost_weigths_):
+        self.x = x_
+        self.y = y_
         self.h_list = h_list
-        self.cost_weights = cost_weigths
+        self.cost_weights = cost_weigths_
         self.n_y = y.shape[1]
 
         self._logits = None
@@ -25,7 +26,7 @@ class ResultPredictingModel:
     def logits(self):
         if self._logits is None:
             with tf.name_scope('LSTM'):
-                lstm_1 = tf.keras.layers.LSTM(128)(x)
+                lstm_1 = tf.keras.layers.LSTM(128)(self.x)
 
             with tf.name_scope('FC'):
                 fc_1 = tf.keras.layers.Dense(self.h_list[0], activation='relu')(lstm_1)
@@ -90,15 +91,14 @@ if __name__ == '__main__':
                  data_reader.preprocessed_data[y_cols].shape[0]
 
     print(radiant_wr)
-    cost_weigths = np.asarray([radiant_wr, 1.-radiant_wr])
+    cost_weigths = np.asarray([radiant_wr, 1. - radiant_wr])
 
     x = tf.placeholder(tf.float32, shape=[None, n_x, 1], name="x")
     y = tf.placeholder(tf.float32, shape=[None, n_y], name="y")
-    tf.constant(cost_weigths)
 
     h = [500, 100, 50]
 
-    model = ResultPredictingModel(y=y, h_list=h, cost_weigths=cost_weigths)
+    model = ResultPredictingModel(x_=x, y_=y, h_list=h, cost_weigths_=cost_weigths)
     model.initialize()
 
     num_epochs = 250
@@ -142,4 +142,3 @@ if __name__ == '__main__':
 
     with open('Datasets/BaseDataset/train_val_test/prediction_val.pickle', 'wb') as file:
         pk.dump(pred_val, file)
-
