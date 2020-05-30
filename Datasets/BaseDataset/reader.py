@@ -151,7 +151,7 @@ class DataReader:
 
 if __name__ == '__main__':
     feature_cols_ = ['dire_score', 'radiant_score', 'duration', 'patch', 'region', 'radiant_team_id', 'dire_team_id',
-                     'players_radiant_id', 'players_dire_id']
+                     'players_radiant_id', 'players_dire_id', 'radiant_team', 'dire_team']
     x_cols_ = ['avg_dire_score', 'avg_radiant_score', 'avg_duration', 'patch', 'region', 'radiant_team_id',
                'dire_team_id'] + [f'radiant_player_{j}' for j in range(1, 6)] + \
               [f'dire_player_{j}' for j in range(1, 6)]
