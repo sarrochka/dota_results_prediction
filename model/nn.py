@@ -129,16 +129,16 @@ if __name__ == '__main__':
         pk.dump(train_y, file)
 
     with open('Datasets/BaseDataset/train_val_test/val_x.pickle', 'wb') as file:
-        pk.dump(train_x, file)
+        pk.dump(val_x, file)
 
     with open('Datasets/BaseDataset/train_val_test/val_y.pickle', 'wb') as file:
-        pk.dump(train_y, file)
+        pk.dump(val_y, file)
 
     with open('Datasets/BaseDataset/train_val_test/test_x.pickle', 'wb') as file:
-        pk.dump(train_x, file)
+        pk.dump(test_x, file)
 
     with open('Datasets/BaseDataset/train_val_test/test_y.pickle', 'wb') as file:
-        pk.dump(train_y, file)
+        pk.dump(test_y, file)
 
     with open('Datasets/BaseDataset/train_val_test/prediction_val.pickle', 'wb') as file:
         pk.dump(pred_val, file)
