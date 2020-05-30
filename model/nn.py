@@ -6,11 +6,12 @@ from Datasets.BaseDataset.reader import DataReader
 
 
 class ResultPredictingModel:
-    def __init__(self, x_, y_, h_list, cost_weigths_):
+    def __init__(self, x_, y_, h_list, cost_weigths_, learning_rate=1e-3):
         self.x = x_
         self.y = y_
         self.h_list = h_list
         self.cost_weights = cost_weigths_
+        self.lr = learning_rate
         self.n_y = y_.shape[1]
 
         self._logits = None
@@ -46,7 +47,7 @@ class ResultPredictingModel:
     def cost(self):
         if self._cost is None:
             with tf.name_scope('Cost'):
-                self._cost = tf.nn.weighted_cross_entropy_with_logits(targets=y, logits=self.prediction(),
+                self._cost = tf.nn.weighted_cross_entropy_with_logits(targets=self.y, logits=self.prediction(),
                                                                       pos_weight=self.cost_weights)
         return self._cost
 
@@ -61,7 +62,7 @@ class ResultPredictingModel:
 
     def optimize(self):
         if self._optimize is None:
-            self._optimize = tf.train.AdagradOptimizer(lr, name='Optimizer').minimize(self.cost())
+            self._optimize = tf.train.AdagradOptimizer(self.lr, name='Optimizer').minimize(self.cost())
         return self._optimize
 
 
@@ -84,8 +85,6 @@ if __name__ == '__main__':
 
     n_x = train_x.shape[1]
     n_y = train_y.shape[1]
-
-    lr = 1e-3
 
     radiant_wr = np.where(data_reader.preprocessed_data[y_cols])[0].shape[0] / \
                  data_reader.preprocessed_data[y_cols].shape[0]
