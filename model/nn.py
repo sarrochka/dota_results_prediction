@@ -11,7 +11,7 @@ class ResultPredictingModel:
         self.y = y_
         self.h_list = h_list
         self.cost_weights = cost_weigths_
-        self.n_y = y.shape[1]
+        self.n_y = y_.shape[1]
 
         self._logits = None
         self._prediction = None
