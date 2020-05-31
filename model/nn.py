@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import pickle as pk
 
-from Datasets.BaseDataset.reader import DataReader
+#from Datasets.BaseDataset.reader import DataReader
 
 
 class ResultPredictingModel:
