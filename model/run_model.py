@@ -87,8 +87,15 @@ if __name__ == '__main__':
         patch_id = int(sys.argv[6])
         team_d_score = int(sys.argv[7])
         team_r_score = int(sys.argv[8])
+        radiant_lose = int(sys.argv[9])
+
+        if radiant_lose == "1":
+            radiant_win = False
+        else:
+            radiant_win = True
 
         temp_dict = {}
+        temp_dict ['radiant_win'] = radiant_win
         temp_dict['dire_score'] = team_d_score
         temp_dict['radiant_score'] = team_r_score
         temp_dict['duration'] = duration
@@ -98,7 +105,7 @@ if __name__ == '__main__':
         temp_dict['dire_team_id'] = team_d_id
         temp_dict['dire_team_id'] = team_d_id
 
-        temp_df = pd.DataFrame.from_dict(temp_dict)
+        temp_df = pd.DataFrame.from_dict([temp_dict])
         update(temp_df)
         print("1")
 
