@@ -7,14 +7,16 @@ import pandas as pd
 import os
 import json
 
+
 os.chdir('../model')
 
+from reader import DataReader
 from nn import ResultPredictingModel
-from Datasets.BaseDataset.reader import DataReader
+
 
 
 def build_model(**kwargs):
-    n_x = 17
+    n_x = 7
     n_y = 2
 
     x = tf.placeholder(tf.float32, shape=[None, n_x, 1], name="x")
@@ -32,19 +34,18 @@ def predict(input_to_analyze: np.ndarray):
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
-        saver.restore(sess, "model_all_ids.ckpt")
+        saver.restore(sess, "model.ckpt")
         predicted = sess.run(model.prediction(), feed_dict={x: np.expand_dims(input_to_analyze, axis=-1)})
 
     return predicted
 
 
 def update(input_to_update: pd.DataFrame):
-    feature_cols = ['dire_score', 'radiant_score', 'duration', 'patch', 'region', 'radiant_team_id', 'dire_team_id',
-                    'radiant_team', 'dire_team']
+    feature_cols = ['dire_score', 'radiant_score', 'duration', 'patch', 'region', 'radiant_team_id', 'dire_team_id']
     y_cols = ['radiant_win']
     x_cols = ['avg_dire_score', 'avg_radiant_score', 'avg_duration', 'patch', 'region']
     x_cols += ['radiant_team_id', 'dire_team_id']
-    x_cols += [f'radiant_player_{j}' for j in range(1, 6)] + [f'dire_player_{j}' for j in range(1, 6)]
+    #x_cols += [f'radiant_player_{j}' for j in range(1, 6)] + [f'dire_player_{j}' for j in range(1, 6)]
 
     data_reader = DataReader('../Datasets/BaseDataset/dota2_dataset.pickle', feature_cols, y_cols, x_cols)
     data_reader.read_preprocessed('../Datasets/BaseDataset/dota2_dataset_preprocessed.pickle')
@@ -67,19 +68,41 @@ def update(input_to_update: pd.DataFrame):
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
-        saver.restore(sess, "model_all_ids.ckpt")
+        saver.restore(sess, "model.ckpt")
         _, c = sess.run([model.optimize(), model.cost()], feed_dict={x: train_x,
                                                                      y: train_y})
-        saver.save(sess, "model/model_all_ids.ckpt")
+        saver.save(sess, "model.ckpt")
 
 
 if __name__ == '__main__':
     num_of_inputs = len(sys.argv)
     with open('../Datasets/BaseDataset/dota2_dataset_preprocessed.pickle', 'rb') as file:
         data = pk.load(file)
-    if num_of_inputs != 3:
-        pass
+    if num_of_inputs == 9:
+        team_d_id = int(sys.argv[1])
+        team_r_id = int(sys.argv[2])
+        match_id = int(sys.argv[3])
+        duration = int(sys.argv[4])
+        region_id = int(sys.argv[5])
+        patch_id = int(sys.argv[6])
+        team_d_score = int(sys.argv[7])
+        team_r_score = int(sys.argv[8])
 
+        temp_dict = {}
+        temp_dict['dire_score'] = team_d_score
+        temp_dict['radiant_score'] = team_r_score
+        temp_dict['duration'] = duration
+        temp_dict['patch'] = patch_id
+        temp_dict['region'] = region_id
+        temp_dict['radiant_team_id'] = team_r_id
+        temp_dict['dire_team_id'] = team_d_id
+        temp_dict['dire_team_id'] = team_d_id
+
+        temp_df = pd.DataFrame.from_dict(temp_dict)
+        update(temp_df)
+        print("1")
+
+    elif num_of_inputs != 3:
         dataSize = data.shape[0]
         teamsDict = {}
         for i in range(dataSize):
