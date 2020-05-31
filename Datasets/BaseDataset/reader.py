@@ -130,6 +130,107 @@ class DataReader:
 
         self.preprocessed_data = new_data
 
+    def add_observations(self, new_data):
+        new_data = new_data[self.used_cols].dropna()
+
+        data_size = new_data.shape[0]
+        for i in range(1, 6):
+            new_data[f'dire_player_{i}'] = np.zeros(data_size, dtype=np.int64)
+            new_data[f'radiant_player_{i}'] = np.zeros(data_size, dtype=np.int64)
+
+        # add average kills and game time for each game except the first patch as feature
+        new_data['avg_dire_score'] = np.zeros(data_size)
+        new_data['avg_radiant_score'] = np.zeros(data_size)
+        new_data['avg_duration'] = np.zeros(data_size)
+
+        patch_avg = {}
+        patches = np.unique(self.preprocessed_data.loc[:, 'patch'])
+
+        for patch in patches:
+            patch_avg[patch] = np.mean(self.preprocessed_data.loc[:, ['dire_score', 'radiant_score', 'duration']].
+                                       loc[self.preprocessed_data['patch'] == patch], axis=0)
+
+        for i in new_data.index:
+
+            match = new_data.loc[i]
+            patch = match['patch']
+            radiant_team_id = match['radiant_team_id']
+            dire_team_id = match['dire_team_id']
+
+            radiant_matches = self.preprocessed_data.query(f'radiant_team_id == {radiant_team_id} | '
+                                                              f'dire_team_id == {radiant_team_id}')
+            last_radiant_match = radiant_matches.loc[radiant_matches.index[-1]]
+
+            dire_matches = self.preprocessed_data.query(f'radiant_team_id == {radiant_team_id} | '
+                                                           f'dire_team_id == {radiant_team_id}')
+            last_dire_match = dire_matches.loc[radiant_matches.index[-1]]
+            assert last_radiant_match.shape[0]
+            assert last_dire_match.shape[0]
+
+            for j in range(5):
+                if np.all(last_radiant_match['radiant_team_id'] == radiant_team_id):
+                    new_data.loc[i, f'radiant_player_{j + 1}'] = last_radiant_match.iloc[0][f'radiant_player_{j + 1}']
+                else:
+                    new_data.loc[i, f'radiant_player_{j + 1}'] = last_radiant_match.iloc[0][f'dire_player_{j + 1}']
+                if np.all(last_radiant_match['radiant_team_id'] == dire_team_id):
+                    new_data.loc[i, f'dire_player_{j + 1}'] = last_dire_match.iloc[0][f'radiant_player_{j + 1}']
+                else:
+                    new_data.loc[i, f'dire_player_{j + 1}'] = last_dire_match.iloc[0][f'dire_player_{j + 1}']
+
+            prev_games_this_patch = self.preprocessed_data.iloc[:i].loc[new_data['patch'] == patch]
+
+            radiant_team_prev_matches_this_patch_as_radiant = prev_games_this_patch.loc[
+                prev_games_this_patch['radiant_team_id'] == radiant_team_id]
+            radiant_team_prev_matches_this_patch_as_dire = prev_games_this_patch.loc[
+                new_data['dire_team_id'] == radiant_team_id]
+            dire_team_prev_matches_this_patch_as_radiant = prev_games_this_patch.loc[
+                prev_games_this_patch['radiant_team_id'] == dire_team_id]
+            dire_team_prev_matches_this_patch_as_dire = prev_games_this_patch.loc[
+                new_data['dire_team_id'] == dire_team_id]
+
+            duration = np.empty(dtype=np.float32, shape=(0,))
+
+            if radiant_team_prev_matches_this_patch_as_radiant.shape[0] != 0:
+                new_data.at[i, 'avg_radiant_score'] = np.mean(radiant_team_prev_matches_this_patch_as_radiant
+                                                              ['radiant_score'])
+                duration = np.append(duration, radiant_team_prev_matches_this_patch_as_radiant['duration'])
+            elif radiant_team_prev_matches_this_patch_as_dire.shape[0] != 0:
+                new_data.at[i, 'avg_radiant_score'] = np.mean(
+                    radiant_team_prev_matches_this_patch_as_dire['dire_score'])
+                duration = np.append(duration, radiant_team_prev_matches_this_patch_as_dire['duration'])
+            elif prev_games_this_patch.shape[0] != 0:
+                new_data.at[i, 'avg_radiant_score'] = np.mean(prev_games_this_patch['radiant_score'])
+                duration = np.append(duration, prev_games_this_patch['duration'])
+            else:
+                new_data.at[i, 'avg_radiant_score'] = patch_avg[patch - 1][1]
+                duration = np.append(duration, patch_avg[patch - 1][2])
+
+            if dire_team_prev_matches_this_patch_as_dire.shape[0] != 0:
+                new_data.at[i, 'avg_dire_score'] = np.mean(dire_team_prev_matches_this_patch_as_dire['dire_score'])
+                duration = np.append(duration, dire_team_prev_matches_this_patch_as_dire['duration'])
+            elif dire_team_prev_matches_this_patch_as_radiant.shape[0] != 0:
+                new_data.at[i, 'avg_dire_score'] = np.mean(
+                    dire_team_prev_matches_this_patch_as_radiant['radiant_score'])
+                duration = np.append(duration, dire_team_prev_matches_this_patch_as_radiant['duration'])
+            elif prev_games_this_patch.shape[0] != 0:
+                new_data.at[i, 'avg_dire_score'] = np.mean(prev_games_this_patch['dire_score'])
+                duration = np.append(duration, prev_games_this_patch['duration'])
+            else:
+                new_data.at[i, 'avg_dire_score'] = patch_avg[patch - 1][0]
+                duration = np.append(duration, patch_avg[patch - 1][2])
+
+            new_data.at[i, 'avg_duration'] = np.mean(duration)
+
+            if new_data.at[i, 'avg_duration'] == 0 or new_data.at[i, 'avg_dire_score'] == 0:
+                print(i)
+                print(prev_games_this_patch.shape, radiant_team_prev_matches_this_patch_as_radiant.shape,
+                      radiant_team_prev_matches_this_patch_as_dire.shape)
+                raise ValueError(i)
+
+        self.preprocessed_data = self.preprocessed_data.append(new_data)
+
+        return new_data
+
     def write_data(self, filename: str):
         with open(filename, 'wb') as file:
             pk.dump(self.preprocessed_data, file)
